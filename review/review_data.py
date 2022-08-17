@@ -48,7 +48,7 @@ def home():
 def about():
     return "this is about page<h1>About</h1>"
 
-@app.route('/reviews', methods =["GET", "POST"])
+@app.route('/add_reviews', methods =["GET", "POST"])
 def review():
     if request.method == "POST":
         name = request.form.get("name")
@@ -65,10 +65,10 @@ def review():
             # flash('This is a flash message')
 
         conn.commit()
-        flash("Employee Inserted Successfully")
+        flash("Review Inserted Successfully")
         cur.close()
         conn.close()
-        return redirect('/lists')
+        return redirect('/reviews_list')
         
     return render_template("post_data_new.html")
             
@@ -82,7 +82,6 @@ def twitter():
         cur = conn.cursor()
         cur.execute("SELECT * FROM public.twitter_data")
         list2=cur.fetchall()
-        print(list2,"staert")
         conn.commit()
         cur.close()
         conn.close()
@@ -90,9 +89,7 @@ def twitter():
     return render_template("list_tweetdata.html",lists=list2)  
 
 
-
-
-@app.route("/lists",methods=["GET","POST"])
+@app.route("/reviews_list",methods=["GET","POST"])
 def list():
     if request.method == "GET":
         list2 =[]
@@ -116,7 +113,7 @@ def delete(id):
         conn.commit()
         cur.close()
         conn.close()
-    return redirect('/lists')
+    return redirect('/reviews_list')
 
 
 @app.route("/update/<int:id>",methods=["GET","POST"])
@@ -136,21 +133,26 @@ def update(id):
         return render_template("update.html",result=result)    
     
     if request.method=="POST":
-        conn=get_db_connection()
-        cur=conn.cursor()
-        id=request.form.get("id")
-        name=request.form.get("name")
-        email=request.form.get("email")
-        review=request.form.get("review")
-        strSQl= "update public.reviews set name='"+name+"',email='"+email+"', review='"+review+"' where id="+str(id)
-        # flash("you are successfuly updated in")
-        cur.execute(strSQl)
-        # data=cur.fetchall()
-        # print("data................",data)
-        conn.commit()
-        cur.close()
-        conn.close()
-    return redirect('/lists')
+        try:
+            conn=get_db_connection()
+            cur=conn.cursor()
+            id=request.form.get("id")
+            name=request.form.get("name")
+            email=request.form.get("email")
+            review=request.form.get("review")
+            strSQl= "update public.reviews set name='"+name+"',email='"+email+"', review='"+review+"' where id="+str(id)
+            cur.execute(strSQl)
+            conn.commit()
+            cur.close()
+            conn.close()
+            flash(f"Successfully Updated")
+        except:
+            conn.commit()
+            cur.close()
+            conn.close()
+            flash(f"Updation Failed")
+                
+    return redirect('/reviews_list')
     
 if __name__=="__main__":
  app.run(debug=True)
