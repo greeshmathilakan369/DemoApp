@@ -19,11 +19,14 @@ app.secret_key="greeshma"
 # class simpleform(FlaskForm):
 #     submit=SubmitField("clicked")
 
-def solve(s):
-   pat = "^[a-zA-Z0-9-_]+@[a-zA-Z0-9]+\.[a-z]{1,3}$"
-   if re.match(pat,s):
-      return True
-   return False
+# def solve(s):
+# #    pattern = "^[a-z A-Z 0-9 -_]+@[a-zA-Z0-9]+\.[a-z]{1,3}$"
+#    pattern='[a-z 0-9]+[\.]?[a-z 0-9]+[@]\w+[.]\w{2,3}$'
+#    if re.search(pattern,email):
+#       pass
+#    else:
+#      print("Invalid email id") 
+#    return False
 
 @app.route("/")
 @app.route("/home")
@@ -48,29 +51,54 @@ def home():
 def about():
     return "this is about page<h1>About</h1>"
 
-@app.route('/add_reviews', methods =["GET", "POST"])
+@app.route('/reviews', methods =["GET", "POST"])
 def review():
     if request.method == "POST":
         name = request.form.get("name")
         email = request.form.get("email")
-        # if solve(email):
+        pattern='[a-z 0-9]+[\.]?[a-z 0-9]+[@]\w+[.]\w{2,3}$'
+        if re.search(pattern,email):
+            review=request.form.get("review")
+            conn = get_db_connection()
+            cur = conn.cursor()
+            user=cur.execute("SELECT * FROM public.reviews where email='"+email+"'")
+            user1=cur.fetchall()
+            # /print("user:::::::::::::;;",user1)
+            if user1 == []:
+                cur.execute('INSERT INTO public.reviews (name, email, review)' 'VALUES(%s, %s, %s)', (name,email,review))
+                # print("insertion return...................................",value1)
+                conn.commit()
+                flash("Employee Inserted Successfully")
+                cur.close()
+                conn.close()
+                return redirect('/lists')
+            else:
+                flash("Email id already in use...")    
+        # return render_template("post_data_new.html")   
+    #     return redirect('/lists')
+    # return render_template("post_data_new.html")
+                
+        else:
+            flash("Invalid email id") 
+    return render_template("post_data_new.html")   
 
-        # email = StringField("Email",  [InputRequired("Please enter your email address."), Email("This field requires a valid email address")])
 
-        review=request.form.get("review")
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute('INSERT INTO public.reviews (name, email, review)' 'VALUES(%s, %s, %s)', (name,email,review))
-            # print("insertion return...................................",value1)
-            # flash('This is a flash message')
-
-        conn.commit()
-        flash("Review Inserted Successfully")
-        cur.close()
-        conn.close()
-        return redirect('/reviews_list')
         
-    return render_template("post_data_new.html")
+
+
+        
+    #     review=request.form.get("review")
+    #     conn = get_db_connection()
+    #     cur = conn.cursor()
+    #     cur.execute('INSERT INTO public.reviews (name, email, review)' 'VALUES(%s, %s, %s)', (name,email,review))
+            
+    #     conn.commit()
+    #     flash("Employee Inserted Successfully")
+    #     cur.close()
+    #     conn.close()
+    #     return redirect('/lists')
+        
+    # return render_template("post_data_new.html")
             
 
 
@@ -82,6 +110,7 @@ def twitter():
         cur = conn.cursor()
         cur.execute("SELECT * FROM public.twitter_data")
         list2=cur.fetchall()
+        print(list2,"staert")
         conn.commit()
         cur.close()
         conn.close()
@@ -89,7 +118,9 @@ def twitter():
     return render_template("list_tweetdata.html",lists=list2)  
 
 
-@app.route("/reviews_list",methods=["GET","POST"])
+
+
+@app.route("/lists",methods=["GET","POST"])
 def list():
     if request.method == "GET":
         list2 =[]
@@ -111,9 +142,10 @@ def delete(id):
         cur=conn.cursor()
         cur.execute("DELETE from public.reviews where id="+str(id)) 
         conn.commit()
+        flash("Deleted sucessfully")
         cur.close()
         conn.close()
-    return redirect('/reviews_list')
+    return redirect('/lists')
 
 
 @app.route("/update/<int:id>",methods=["GET","POST"])
@@ -133,26 +165,22 @@ def update(id):
         return render_template("update.html",result=result)    
     
     if request.method=="POST":
-        try:
-            conn=get_db_connection()
-            cur=conn.cursor()
-            id=request.form.get("id")
-            name=request.form.get("name")
-            email=request.form.get("email")
-            review=request.form.get("review")
-            strSQl= "update public.reviews set name='"+name+"',email='"+email+"', review='"+review+"' where id="+str(id)
-            cur.execute(strSQl)
-            conn.commit()
-            cur.close()
-            conn.close()
-            flash(f"Successfully Updated")
-        except:
-            conn.commit()
-            cur.close()
-            conn.close()
-            flash(f"Updation Failed")
-                
-    return redirect('/reviews_list')
+        conn=get_db_connection()
+        cur=conn.cursor()
+        id=request.form.get("id")
+        name=request.form.get("name")
+        email=request.form.get("email")
+        review=request.form.get("review")
+        strSQl= "update public.reviews set name='"+name+"',email='"+email+"', review='"+review+"' where id="+str(id)
+        # flash("you are successfuly updated in")
+        cur.execute(strSQl)
+        # data=cur.fetchall()
+        # print("data................",data)
+        conn.commit()
+        flash("Modified user data sucessfully")
+        cur.close()
+        conn.close()
+    return redirect('/lists')
     
 if __name__=="__main__":
  app.run(debug=True)
